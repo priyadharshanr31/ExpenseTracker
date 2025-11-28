@@ -62,11 +62,14 @@ class _LandingScreenState extends State<LandingScreen> {
                   onPressed: () {
                     Navigator.pop(context);
                     // Add transaction to provider
+                    final now = DateTime.now();
+                    final formattedDate = "${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')}/${now.year}";
+
                     final transaction = Transaction(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      id: now.millisecondsSinceEpoch.toString(),
                       name: receiptData['merchant'],
                       category: 'Shopping', // Default category
-                      date: DateTime.now().toString().substring(0, 10),
+                      date: formattedDate,
                       amount: -receiptData['amount'], // Negative for expense
                       type: 'Expense',
                     );
