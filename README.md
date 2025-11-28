@@ -5,7 +5,7 @@ A mobile application for tracking expenses and managing personal finances, built
 ## Features
 *   Track daily expenses
 *   Visualize spending habits
-*   (Add whatever features you have actually built or plan to build)
+*   Coming Soon - This is foundation
 
 ## Getting Started
 
