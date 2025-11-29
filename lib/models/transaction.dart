@@ -5,6 +5,7 @@ class Transaction {
   final String date;
   final double amount;
   final String type;
+  final String? cardId;
 
   Transaction({
     required this.id,
@@ -13,6 +14,7 @@ class Transaction {
     required this.date,
     required this.amount,
     required this.type,
+    this.cardId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -22,6 +24,7 @@ class Transaction {
     'date': date,
     'amount': amount,
     'type': type,
+    'cardId': cardId,
   };
 
   factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
@@ -31,5 +34,6 @@ class Transaction {
     date: json['date'] as String,
     amount: (json['amount'] as num).toDouble(),
     type: json['type'] as String,
+    cardId: json['cardId'] as String?,
   );
 }

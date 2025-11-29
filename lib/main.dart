@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'providers/transaction_provider.dart';
-import 'screens/landing_screen.dart';
+import 'providers/card_provider.dart';
 import 'screens/dashboard_screen.dart';
-import 'screens/transactions_screen.dart';
-import 'screens/budgets_screen.dart';
-import 'screens/reports_screen.dart';
+import 'screens/add_screen.dart';
+import 'screens/cards_screen.dart';
+import 'screens/ai_screen.dart';
 
-void main() {
+void main() async {
+  await dotenv.load(fileName: ".env");
   runApp(const SpendWiseApp());
 }
 
@@ -17,22 +19,52 @@ class SpendWiseApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => TransactionProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => TransactionProvider()),
+        ChangeNotifierProvider(create: (context) => CardProvider()),
+      ],
       child: MaterialApp(
-        title: 'spendAI',
+        title: 'SpendAI',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
+          brightness: Brightness.dark,
           colorScheme: ColorScheme.fromSeed(
+            brightness: Brightness.dark,
             seedColor: const Color(0xFF6366F1), // Indigo
             secondary: const Color(0xFFEC4899), // Pink
             tertiary: const Color(0xFFF59E0B), // Amber
-            background: const Color(0xFFF3F4F6),
+            background: const Color(0xFF121212), // Dark Background
+            surface: const Color(0xFF1E1E1E), // Dark Surface
           ),
           useMaterial3: true,
-          textTheme: GoogleFonts.interTextTheme(),
-          scaffoldBackgroundColor: const Color(0xFFF3F4F6),
+          textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
+          scaffoldBackgroundColor: const Color(0xFF121212),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            centerTitle: true,
+            titleTextStyle: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            iconTheme: IconThemeData(color: Colors.white),
+          ),
+          cardTheme: CardThemeData(
+            color: const Color(0xFF1E1E1E),
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          bottomSheetTheme: const BottomSheetThemeData(
+            backgroundColor: Color(0xFF1E1E1E),
+            modalBackgroundColor: Color(0xFF1E1E1E),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+          ),
         ),
-        home: const LandingScreen(),
+        home: const MainLayout(),
       ),
     );
   }
@@ -48,18 +80,16 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
 
-  // Static screen list to prevent recreation
   static const List<Widget> _screens = [
     DashboardScreen(),
-    TransactionsScreen(),
-    BudgetsScreen(),
-    ReportsScreen(),
+    AddScreen(),
+    CardsScreen(),
+    AiScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Use IndexedStack to preserve state and prevent rebuilds
       body: IndexedStack(
         index: _selectedIndex,
         children: _screens,
@@ -71,6 +101,10 @@ class _MainLayoutState extends State<MainLayout> {
             _selectedIndex = index;
           });
         },
+        backgroundColor: const Color(0xFF1E1E1E),
+        elevation: 0,
+        indicatorColor: Theme.of(context).colorScheme.primaryContainer,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         destinations: const <NavigationDestination>[
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
@@ -78,19 +112,19 @@ class _MainLayoutState extends State<MainLayout> {
             label: 'Dashboard',
           ),
           NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'Transactions',
+            icon: Icon(Icons.add_circle_outline),
+            selectedIcon: Icon(Icons.add_circle),
+            label: 'Add',
           ),
           NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Budgets',
+            icon: Icon(Icons.credit_card_outlined),
+            selectedIcon: Icon(Icons.credit_card),
+            label: 'Cards',
           ),
           NavigationDestination(
-            icon: Icon(Icons.pie_chart_outline),
-            selectedIcon: Icon(Icons.pie_chart),
-            label: 'Reports',
+            icon: Icon(Icons.auto_awesome_outlined),
+            selectedIcon: Icon(Icons.auto_awesome),
+            label: 'AI Analysis',
           ),
         ],
       ),
