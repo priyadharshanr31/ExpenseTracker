@@ -20,7 +20,7 @@ class SpendWiseApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => TransactionProvider(),
       child: MaterialApp(
-        title: 'SpendWise',
+        title: 'spendAI',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF6366F1), // Indigo
@@ -48,17 +48,22 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const DashboardScreen(),
-    const TransactionsScreen(),
-    const BudgetsScreen(),
-    const ReportsScreen(),
+  // Static screen list to prevent recreation
+  static const List<Widget> _screens = [
+    DashboardScreen(),
+    TransactionsScreen(),
+    BudgetsScreen(),
+    ReportsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_selectedIndex],
+      // Use IndexedStack to preserve state and prevent rebuilds
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (int index) {

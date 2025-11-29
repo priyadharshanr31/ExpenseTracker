@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:spendwise_mobile/main.dart';
+import 'package:spendai/main.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
@@ -16,7 +16,7 @@ void main() {
     await tester.pumpWidget(const SpendWiseApp());
 
     // Verify that the app starts with the LandingScreen
-    expect(find.text('spend.AI'), findsOneWidget);
+    expect(find.text('spendAI'), findsOneWidget);
     expect(find.text('Dashboard'), findsOneWidget);
   });
 }

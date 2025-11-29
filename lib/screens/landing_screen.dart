@@ -6,6 +6,7 @@ import '../services/ocr_service.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
 import 'dashboard_screen.dart';
+import '../utils/duplicate_transaction_utils.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -16,7 +17,7 @@ class LandingScreen extends StatefulWidget {
 
 class _LandingScreenState extends State<LandingScreen> {
   final ImagePickerService _imagePickerService = ImagePickerService();
-  final OCRService _ocrService = OCRService();
+  final OCRService _ocrService = OCRService.instance;
   bool _isProcessing = false;
 
   Future<void> _handleAddReceipt() async {
@@ -47,9 +48,7 @@ class _LandingScreenState extends State<LandingScreen> {
                     const SizedBox(height: 8),
                     Text('Amount: \$${receiptData['amount'].toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
-                    const Text('Raw Text:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(extractedText.isEmpty ? 'No text found' : extractedText, style: const TextStyle(fontSize: 12)),
+
                   ],
                 ),
               ),
@@ -74,11 +73,22 @@ class _LandingScreenState extends State<LandingScreen> {
                       type: 'Expense',
                     );
                     
-                    Provider.of<TransactionProvider>(context, listen: false).addTransaction(transaction);
+                    final provider = Provider.of<TransactionProvider>(context, listen: false);
                     
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Transaction added successfully!')),
-                    );
+                    // Check for duplicates
+                    if (DuplicateTransactionUtils.isDuplicate(transaction, provider.transactions)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Duplicate transaction detected! This receipt has already been added.'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    } else {
+                      provider.addTransaction(transaction);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Transaction added successfully!')),
+                      );
+                    }
                   },
                   child: const Text('Add Transaction'),
                 ),
@@ -117,7 +127,7 @@ class _LandingScreenState extends State<LandingScreen> {
           children: [
             // spend.AI branding
             const Text(
-              'spend.AI',
+              'spendAI',
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,

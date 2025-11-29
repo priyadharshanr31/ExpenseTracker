@@ -1,6 +1,5 @@
-# How to Install Flutter and Run Spendwise
-
-## 1. Install Flutter (Recommended Method)
+# How to Install Flutter and Run# spendAI Installation Guide
+r (Recommended Method)
 The most reliable way to install Flutter is using `git`. This avoids version errors.
 
 1.  **Remove the previous broken installation** (if any):

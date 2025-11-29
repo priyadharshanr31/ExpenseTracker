@@ -1,15 +1,22 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 class OCRService {
+  static OCRService? _instance;
   TextRecognizer? _textRecognizer;
 
-  OCRService() {
+  // Private constructor
+  OCRService._() {
     // Only initialize text recognizer on mobile platforms
     if (!kIsWeb) {
       _textRecognizer = TextRecognizer();
     }
+  }
+
+  // Singleton getter
+  static OCRService get instance {
+    _instance ??= OCRService._();
+    return _instance!;
   }
 
   Future<String> extractText(String imagePath) async {
@@ -29,6 +36,10 @@ class OCRService {
     }
   }
 
+  // Compile regex patterns once for better performance
+  static final _amountRegex = RegExp(r'(\d{1,6}\.\d{2})');
+  static final _merchantRegex = RegExp(r'\d{5,}');
+
   Future<Map<String, dynamic>> parseReceiptData(String text) async {
     final lines = text.split('\n');
     
@@ -43,10 +54,9 @@ class OCRService {
       for (final keyword in totalKeywords) {
         if (line.contains(keyword)) {
           // Look for amount in this line or next line
-          final amountRegex = RegExp(r'(\d{1,6}\.\d{2})');
           
           // Check current line
-          final matchCurrent = amountRegex.firstMatch(lines[i]);
+          final matchCurrent = _amountRegex.firstMatch(lines[i]);
           if (matchCurrent != null) {
             final amount = double.tryParse(matchCurrent.group(1) ?? '');
             if (amount != null && amount > 0 && amount < 1000000) {
@@ -57,7 +67,7 @@ class OCRService {
           
           // Check next line if current line doesn't have amount
           if (i + 1 < lines.length && total == 0.0) {
-            final matchNext = amountRegex.firstMatch(lines[i + 1]);
+            final matchNext = _amountRegex.firstMatch(lines[i + 1]);
             if (matchNext != null) {
               final amount = double.tryParse(matchNext.group(1) ?? '');
               if (amount != null && amount > 0 && amount < 1000000) {
@@ -74,11 +84,10 @@ class OCRService {
     
     // If still no total found, look for reasonable amounts (with decimal points)
     if (total == 0.0) {
-      final amountRegex = RegExp(r'(\d{1,6}\.\d{2})');
       final amounts = <double>[];
       
       for (final line in lines) {
-        final matches = amountRegex.allMatches(line);
+        final matches = _amountRegex.allMatches(line);
         for (final match in matches) {
           final amount = double.tryParse(match.group(1) ?? '');
           if (amount != null && amount > 0 && amount < 10000) {
@@ -97,7 +106,7 @@ class OCRService {
     String merchant = 'Unknown Merchant';
     for (int i = 0; i < lines.length && i < 5; i++) {
       final line = lines[i].trim();
-      if (line.length > 5 && !line.contains(RegExp(r'\d{5,}'))) {
+      if (line.length > 5 && !line.contains(_merchantRegex)) {
         merchant = line;
         break;
       }

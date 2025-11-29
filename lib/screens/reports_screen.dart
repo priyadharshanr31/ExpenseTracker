@@ -56,20 +56,22 @@ class ReportsScreen extends StatelessWidget {
               const SizedBox(height: 24),
               
               // Pie Chart
-              SizedBox(
-                height: 250,
-                child: PieChart(
-                  PieChartData(
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 40,
-                    sections: data.map((item) {
-                      return PieChartSectionData(
-                        value: item['value'] as double,
-                        color: item['color'] as Color,
-                        radius: 80,
-                        showTitle: false,
-                      );
-                    }).toList(),
+              RepaintBoundary(
+                child: SizedBox(
+                  height: 250,
+                  child: PieChart(
+                    PieChartData(
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 40,
+                      sections: data.map((item) {
+                        return PieChartSectionData(
+                          value: item['value'] as double,
+                          color: item['color'] as Color,
+                          radius: 80,
+                          showTitle: false,
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
               ),

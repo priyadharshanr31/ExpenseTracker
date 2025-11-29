@@ -2,8 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../widgets/assistant_fab.dart';
 
-class DashboardScreen extends StatelessWidget {
+import '../widgets/assistant_panel.dart';
+
+import 'package:provider/provider.dart';
+import '../providers/transaction_provider.dart';
+import '../models/transaction.dart';
+
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  bool _isAssistantVisible = false;
+
+  void _toggleAssistant() {
+    setState(() {
+      _isAssistantVisible = !_isAssistantVisible;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,151 +42,198 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Summary Cards
-            SizedBox(
-              height: 140,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: const [
-                  SummaryCard(
-                    title: 'Total Income',
-                    amount: '\$5,750.00',
-                    icon: Icons.trending_up,
-                    color: Colors.green,
-                  ),
-                  SummaryCard(
-                    title: 'Total Expenses',
-                    amount: '\$2,080.00',
-                    icon: Icons.trending_down,
-                    color: Colors.red,
-                  ),
-                  SummaryCard(
-                    title: 'Savings',
-                    amount: '\$3,670.00',
-                    icon: Icons.account_balance_wallet,
-                    color: Colors.blue,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
+      body: Stack(
+        children: [
+          // Main Content
+          Consumer<TransactionProvider>(
+            builder: (context, provider, child) {
+              final transactions = provider.transactions;
+              
+              // Calculate totals
+              double totalIncome = 0;
+              double totalExpenses = 0;
+              
+              for (var t in transactions) {
+                if (t.type == 'Income' || t.amount > 0) {
+                  totalIncome += t.amount.abs();
+                } else {
+                  totalExpenses += t.amount.abs();
+                }
+              }
+              
+              final savings = totalIncome - totalExpenses;
 
-            // Income vs Spending Chart
-            const Text('Income vs. Spending Flow', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Container(
-              height: 200,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
-              ),
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(show: false),
-                  titlesData: FlTitlesData(show: false),
-                  borderData: FlBorderData(show: false),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: const [
-                        FlSpot(0, 4), FlSpot(1, 3), FlSpot(2, 2), FlSpot(3, 2.7),
-                        FlSpot(4, 1.8), FlSpot(5, 2.3), FlSpot(6, 3.4),
-                      ],
-                      isCurved: true,
-                      color: Colors.indigo,
-                      barWidth: 3,
-                      dotData: FlDotData(show: false),
-                      belowBarData: BarAreaData(show: true, color: Colors.indigo.withOpacity(0.1)),
-                    ),
-                    LineChartBarData(
-                      spots: const [
-                        FlSpot(0, 2.4), FlSpot(1, 1.3), FlSpot(2, 9.8), FlSpot(3, 3.9),
-                        FlSpot(4, 4.8), FlSpot(5, 3.8), FlSpot(6, 4.3),
-                      ],
-                      isCurved: true,
-                      color: Colors.pink,
-                      barWidth: 3,
-                      dotData: FlDotData(show: false),
-                      belowBarData: BarAreaData(show: true, color: Colors.pink.withOpacity(0.1)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Spending by Category
-            const Text('Spending by Category', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Container(
-              height: 220,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: PieChart(
-                      PieChartData(
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 40,
-                        sections: [
-                          PieChartSectionData(value: 40, color: Colors.indigo, radius: 25, showTitle: false),
-                          PieChartSectionData(value: 30, color: Colors.pink, radius: 25, showTitle: false),
-                          PieChartSectionData(value: 15, color: Colors.amber, radius: 25, showTitle: false),
-                          PieChartSectionData(value: 15, color: Colors.green, radius: 25, showTitle: false),
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Summary Cards
+                    SizedBox(
+                      height: 140,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          SummaryCard(
+                            title: 'Total Income',
+                            amount: '\$${totalIncome.toStringAsFixed(2)}',
+                            icon: Icons.trending_up,
+                            color: Colors.green,
+                          ),
+                          SummaryCard(
+                            title: 'Total Expenses',
+                            amount: '\$${totalExpenses.toStringAsFixed(2)}',
+                            icon: Icons.trending_down,
+                            color: Colors.red,
+                          ),
+                          SummaryCard(
+                            title: 'Savings',
+                            amount: '\$${savings.toStringAsFixed(2)}',
+                            icon: Icons.account_balance_wallet,
+                            color: Colors.blue,
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                  const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      LegendItem(color: Colors.indigo, text: 'Housing'),
-                      LegendItem(color: Colors.pink, text: 'Food'),
-                      LegendItem(color: Colors.amber, text: 'Transport'),
-                      LegendItem(color: Colors.green, text: 'Others'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-            // Recent Transactions
-            const Text('Recent Transactions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
-              ),
-              child: Column(
-                children: const [
-                  TransactionTile(name: 'Groceries', category: 'Food', amount: '-\$150.00', date: '11/25'),
-                  Divider(height: 1),
-                  TransactionTile(name: 'Bus Pass', category: 'Transport', amount: '-\$60.00', date: '11/22'),
-                  Divider(height: 1),
-                  TransactionTile(name: 'Freelance', category: 'Income', amount: '+\$750.00', date: '11/18', isIncome: true),
-                ],
+                    // Income vs Spending Chart
+                    const Text('Income vs. Spending Flow', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    RepaintBoundary(
+                      child: Container(
+                        height: 200,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                        ),
+                        child: LineChart(
+                          LineChartData(
+                            gridData: FlGridData(show: false),
+                            titlesData: FlTitlesData(show: false),
+                            borderData: FlBorderData(show: false),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: const [
+                                  FlSpot(0, 4), FlSpot(1, 3), FlSpot(2, 2), FlSpot(3, 2.7),
+                                  FlSpot(4, 1.8), FlSpot(5, 2.3), FlSpot(6, 3.4),
+                                ],
+                                isCurved: true,
+                                color: Colors.indigo,
+                                barWidth: 3,
+                                dotData: FlDotData(show: false),
+                                belowBarData: BarAreaData(show: true, color: Colors.indigo.withOpacity(0.1)),
+                              ),
+                              LineChartBarData(
+                                spots: const [
+                                  FlSpot(0, 2.4), FlSpot(1, 1.3), FlSpot(2, 9.8), FlSpot(3, 3.9),
+                                  FlSpot(4, 4.8), FlSpot(5, 3.8), FlSpot(6, 4.3),
+                                ],
+                                isCurved: true,
+                                color: Colors.pink,
+                                barWidth: 3,
+                                dotData: FlDotData(show: false),
+                                belowBarData: BarAreaData(show: true, color: Colors.pink.withOpacity(0.1)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Spending by Category
+                    const Text('Spending by Category', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    RepaintBoundary(
+                      child: Container(
+                        height: 220,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: PieChart(
+                                PieChartData(
+                                  sectionsSpace: 2,
+                                  centerSpaceRadius: 40,
+                                  sections: [
+                                    PieChartSectionData(value: 40, color: Colors.indigo, radius: 25, showTitle: false),
+                                    PieChartSectionData(value: 30, color: Colors.pink, radius: 25, showTitle: false),
+                                    PieChartSectionData(value: 15, color: Colors.amber, radius: 25, showTitle: false),
+                                    PieChartSectionData(value: 15, color: Colors.green, radius: 25, showTitle: false),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                LegendItem(color: Colors.indigo, text: 'Housing'),
+                                LegendItem(color: Colors.pink, text: 'Food'),
+                                LegendItem(color: Colors.amber, text: 'Transport'),
+                                LegendItem(color: Colors.green, text: 'Others'),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Recent Transactions
+                    const Text('Recent Transactions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: transactions.length > 5 ? 5 : transactions.length,
+                        separatorBuilder: (context, index) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final transaction = transactions[index];
+                          return TransactionTile(
+                            name: transaction.name,
+                            category: transaction.category,
+                            amount: '${transaction.amount < 0 ? "-" : "+"}\$${transaction.amount.abs().toStringAsFixed(2)}',
+                            date: transaction.date,
+                            isIncome: transaction.type == 'Income' || transaction.amount > 0,
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 80), // Space for FAB
+                  ],
+                ),
+              );
+            },
+          ),
+          
+          // Assistant Panel Overlay
+          if (_isAssistantVisible)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: AssistantPanel(
+                onClose: _toggleAssistant,
               ),
             ),
-            const SizedBox(height: 80), // Space for FAB
-          ],
-        ),
+        ],
       ),
-      floatingActionButton: const AssistantFab(),
+      floatingActionButton: AssistantFab(onPressed: _toggleAssistant),
     );
   }
 }
