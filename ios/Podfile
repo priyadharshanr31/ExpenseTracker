@@ -47,7 +47,7 @@ post_install do |installer|
       config.build_settings['EXCLUDED_ARCHS[sdk=iphoneos*]'] = "armv7"
       
       # Ensure arm64 is NOT excluded for simulator (fix for Apple Silicon)
-      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = "i386"
+      
     end
   end
 end
