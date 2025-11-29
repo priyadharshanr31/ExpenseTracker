@@ -46,8 +46,13 @@ post_install do |installer|
       # Exclude armv7 (32-bit) which is not supported by modern ML Kit
       config.build_settings['EXCLUDED_ARCHS[sdk=iphoneos*]'] = "armv7"
       
-      # Ensure arm64 is NOT excluded for simulator (fix for Apple Silicon)
+      # CRITICAL: Override Flutter's default to allow arm64 on Apple Silicon simulators
+      # Flutter's Generated.xcconfig excludes arm64, but we need it for M-series Macs
+      config.build_settings.delete('EXCLUDED_ARCHS[sdk=iphonesimulator*]')
+      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = "i386"
       
+      # Fix for MLKit frameworks built for device being linked in simulator
+      config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
     end
   end
 end
