@@ -4,10 +4,13 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/card_provider.dart';
+import 'providers/auth_provider.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/add_screen.dart';
 import 'screens/cards_screen.dart';
 import 'screens/ai_screen.dart';
+import 'screens/auth_screen.dart';
+import 'widgets/profile_dialog.dart';
 
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -21,50 +24,62 @@ class SpendWiseApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => TransactionProvider()),
-        ChangeNotifierProvider(create: (context) => CardProvider()),
-      ],
-      child: MaterialApp(
-        title: 'SpendAI',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          colorScheme: ColorScheme.fromSeed(
-            brightness: Brightness.dark,
-            seedColor: const Color(0xFF6366F1), // Indigo
-            secondary: const Color(0xFFEC4899), // Pink
-            tertiary: const Color(0xFFF59E0B), // Amber
-            background: const Color(0xFF121212), // Dark Background
-            surface: const Color(0xFF1E1E1E), // Dark Surface
-          ),
-          useMaterial3: true,
-          textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
-          scaffoldBackgroundColor: const Color(0xFF121212),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: true,
-            titleTextStyle: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-            iconTheme: IconThemeData(color: Colors.white),
-          ),
-          cardTheme: CardThemeData(
-            color: const Color(0xFF1E1E1E),
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          ),
-          bottomSheetTheme: const BottomSheetThemeData(
-            backgroundColor: Color(0xFF1E1E1E),
-            modalBackgroundColor: Color(0xFF1E1E1E),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-          ),
+        ChangeNotifierProvider(create: (context) => AuthProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, TransactionProvider>(
+          create: (context) => TransactionProvider(),
+          update: (context, auth, previous) => previous!..updateUserId(auth.currentUser?.username),
         ),
-        home: const MainLayout(),
+        ChangeNotifierProxyProvider<AuthProvider, CardProvider>(
+          create: (context) => CardProvider(),
+          update: (context, auth, previous) => previous!..updateUserId(auth.currentUser?.username),
+        ),
+      ],
+      child: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          return MaterialApp(
+            title: 'SpendAI',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              brightness: Brightness.dark,
+              colorScheme: ColorScheme.fromSeed(
+                brightness: Brightness.dark,
+                seedColor: const Color(0xFF3B82F6), // Blue
+                primary: const Color(0xFF3B82F6), // Blue
+                secondary: const Color(0xFF64748B), // Slate
+                tertiary: const Color(0xFF0EA5E9), // Sky
+                background: const Color(0xFF0F172A), // Navy/Slate Background
+                surface: const Color(0xFF1E293B), // Slate Surface
+              ),
+              useMaterial3: true,
+              textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
+              scaffoldBackgroundColor: const Color(0xFF0F172A),
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                centerTitle: true,
+                titleTextStyle: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                iconTheme: IconThemeData(color: Colors.white),
+              ),
+              cardTheme: CardThemeData(
+                color: const Color(0xFF1E293B),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              bottomSheetTheme: const BottomSheetThemeData(
+                backgroundColor: Color(0xFF1E293B),
+                modalBackgroundColor: Color(0xFF1E293B),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+              ),
+            ),
+            home: auth.isLoggedIn ? const MainLayout() : const AuthScreen(),
+          );
+        },
       ),
     );
   }
@@ -89,7 +104,28 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<AuthProvider>(context).currentUser;
+
     return Scaffold(
+      appBar: AppBar(
+        title: Text(_getTitle(_selectedIndex)),
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: GestureDetector(
+            onTap: () => showDialog(
+              context: context,
+              builder: (context) => const ProfileDialog(),
+            ),
+            child: CircleAvatar(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: Text(
+                user?.name[0].toUpperCase() ?? 'U',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: IndexedStack(
         index: _selectedIndex,
         children: _screens,
@@ -101,9 +137,9 @@ class _MainLayoutState extends State<MainLayout> {
             _selectedIndex = index;
           });
         },
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: const Color(0xFF1E293B),
         elevation: 0,
-        indicatorColor: Theme.of(context).colorScheme.primaryContainer,
+        indicatorColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         destinations: const <NavigationDestination>[
           NavigationDestination(
@@ -129,5 +165,15 @@ class _MainLayoutState extends State<MainLayout> {
         ],
       ),
     );
+  }
+
+  String _getTitle(int index) {
+    switch (index) {
+      case 0: return 'Dashboard';
+      case 1: return 'Add Transaction';
+      case 2: return 'My Cards';
+      case 3: return 'AI Analysis';
+      default: return 'SpendAI';
+    }
   }
 }

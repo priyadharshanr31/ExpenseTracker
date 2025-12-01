@@ -13,9 +13,6 @@ class CardsScreen extends StatelessWidget {
     final cards = provider.cards;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Cards'),
-      ),
       body: cards.isEmpty
           ? Center(
               child: Column(
@@ -133,11 +130,11 @@ class _CreditCardWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Balance',
+                    'Available Balance',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   Text(
-                    '\$${card.balance.toStringAsFixed(2)}',
+                    '\$${card.remainingLimit.toStringAsFixed(2)}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -146,7 +143,23 @@ class _CreditCardWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              const Icon(Icons.credit_card, color: Colors.white, size: 32),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text(
+                    'Limit',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  Text(
+                    '\$${card.monthlyLimit.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ],
@@ -166,6 +179,7 @@ class _AddCardFormState extends State<_AddCardForm> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _last4Controller = TextEditingController();
+  final _limitController = TextEditingController();
   Color _selectedColor = const Color(0xFF1E293B); // Slate 800
 
   final List<Color> _colors = [
@@ -217,6 +231,21 @@ class _AddCardFormState extends State<_AddCardForm> {
               validator: (value) => (value?.length ?? 0) != 4 ? 'Must be 4 digits' : null,
             ),
             const SizedBox(height: 16),
+            TextFormField(
+              controller: _limitController,
+              decoration: const InputDecoration(
+                labelText: 'Monthly Limit',
+                prefixText: '\$ ',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Required';
+                if (double.tryParse(value) == null) return 'Invalid number';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
             const Text('Card Color'),
             const SizedBox(height: 8),
             SizedBox(
@@ -265,7 +294,9 @@ class _AddCardFormState extends State<_AddCardForm> {
         id: const Uuid().v4(),
         name: _nameController.text,
         last4: _last4Controller.text,
+        monthlyLimit: double.parse(_limitController.text),
         colorValue: _selectedColor.value,
+        userId: '', // Will be set by provider
       );
       
       Provider.of<CardProvider>(context, listen: false).addCard(newCard);

@@ -6,6 +6,7 @@ class Transaction {
   final double amount;
   final String type;
   final String? cardId;
+  final String userId;
 
   Transaction({
     required this.id,
@@ -15,6 +16,7 @@ class Transaction {
     required this.amount,
     required this.type,
     this.cardId,
+    required this.userId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -25,6 +27,7 @@ class Transaction {
     'amount': amount,
     'type': type,
     'cardId': cardId,
+    'userId': userId,
   };
 
   factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
@@ -35,5 +38,6 @@ class Transaction {
     amount: (json['amount'] as num).toDouble(),
     type: json['type'] as String,
     cardId: json['cardId'] as String?,
+    userId: json['userId'] as String? ?? 'default', // Backward compatibility
   );
 }

@@ -1,7 +1,8 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/card_provider.dart';
 import '../models/transaction.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -9,9 +10,17 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<TransactionProvider>(context);
-    final transactions = provider.transactions;
-    final totalBalance = transactions.fold(0.0, (sum, t) => sum + t.amount);
+    final transactionProvider = Provider.of<TransactionProvider>(context);
+    final cardProvider = Provider.of<CardProvider>(context);
+    
+    final transactions = transactionProvider.transactions;
+    final cards = cardProvider.cards;
+    
+    // Calculate Total Balance from Cards (Sum of Remaining Limits)
+    // If no cards, default to 0.0 or maybe keep transaction sum? 
+    // User asked: "total balance from all the cards the user have added"
+    final totalBalance = cards.fold(0.0, (sum, card) => sum + card.remainingLimit);
+    
     final expenseTransactions = transactions.where((t) => t.type == 'Expense').toList();
     
     // Group expenses by category
@@ -50,11 +59,7 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.grey[200],
-                    child: const Icon(Icons.person, color: Colors.grey),
-                  ),
+                  // Profile Icon Removed as requested
                 ],
               ),
               const SizedBox(height: 32),
@@ -169,6 +174,8 @@ class _TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isIncome = transaction.type == 'Income';
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardProvider = Provider.of<CardProvider>(context, listen: false);
+    final card = transaction.cardId != null ? cardProvider.getCardById(transaction.cardId!) : null;
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -211,12 +218,33 @@ class _TransactionTile extends StatelessWidget {
                     color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
-                Text(
-                  transaction.category,
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 14,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      transaction.category,
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (card != null) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 4, height: 4,
+                        decoration: BoxDecoration(color: Colors.grey[500], shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(Icons.credit_card, size: 12, color: Colors.grey[500]),
+                      const SizedBox(width: 4),
+                      Text(
+                        card.name,
+                        style: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
